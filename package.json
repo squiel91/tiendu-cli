@@ -1,0 +1,41 @@
+{
+  "name": "tiendu-cli",
+  "version": "0.1.0",
+  "description": "CLI para desarrollar y publicar temas en Tiendu",
+  "type": "module",
+  "bin": {
+    "tiendu": "./bin/tiendu.mjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "node bin/tiendu.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "tiendu",
+    "ecommerce",
+    "theme",
+    "storefront",
+    "cli"
+  ],
+  "author": "Tiendu",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/squiel91/tiendu-cli"
+  },
+  "homepage": "https://tiendu.uy",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
+  }
+}
