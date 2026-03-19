@@ -1,4 +1,4 @@
-# tiendu-cli
+# tiendu
 
 Official CLI for [Tiendu](https://tiendu.uy) — develop and publish storefront themes from your local machine.
 
@@ -17,7 +17,7 @@ Download your store's theme, edit files locally, preview changes live with a sha
 ## Installation
 
 ```bash
-npm install -g tiendu-cli
+npm install -g tiendu
 ```
 
 ---
