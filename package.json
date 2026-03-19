@@ -1,6 +1,6 @@
 {
   "name": "tiendu",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "CLI para desarrollar y publicar temas en Tiendu",
   "type": "module",
   "bin": {
