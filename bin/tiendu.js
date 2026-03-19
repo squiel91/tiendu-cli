@@ -7,6 +7,7 @@ import { dev } from "../lib/dev.mjs";
 import { publish } from "../lib/publish.mjs";
 import {
   previewCreate,
+  previewShow,
   previewList,
   previewDelete,
   previewOpen,
@@ -23,10 +24,11 @@ Usage:
   tiendu dev                 Start dev mode: auto-sync changes to a live preview URL
   tiendu publish             Publish the active preview to the live storefront
 
+  tiendu preview             Show the active preview details
   tiendu preview create      Create a new remote preview
   tiendu preview list        List previews for your store
   tiendu preview delete      Delete the active preview
-  tiendu preview open        Open the preview URL in your browser
+  tiendu preview open        Open the active preview URL in your browser
 
   tiendu help                Show this help message
 
@@ -82,6 +84,10 @@ const main = async () => {
   }
 
   if (command === "preview") {
+    if (!subcommand) {
+      await previewShow();
+      return;
+    }
     if (subcommand === "create") {
       await previewCreate(args[2]);
       return;
