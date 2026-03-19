@@ -14,24 +14,28 @@ import {
 import { checkForUpdates } from "../lib/update-check.mjs";
 
 const HELP = `
-tiendu — CLI para desarrollar temas de Tiendu
+tiendu — Tiendu theme development CLI
 
-Uso:
-  tiendu init                Inicializar un tema en el directorio actual
-  tiendu pull                Descargar el tema live desde Tiendu
-  tiendu push                Subir archivos locales al preview activo (ZIP)
-  tiendu dev                 Modo desarrollo: watch + sync automático
-  tiendu publish             Publicar el preview activo al storefront live
+Usage:
+  tiendu init [dir]          Set up a theme project (optionally in a new directory)
+  tiendu pull                Download the live theme from your store
+  tiendu push                Upload local files to the active preview (full replace)
+  tiendu dev                 Start dev mode: auto-sync changes to a live preview URL
+  tiendu publish             Publish the active preview to the live storefront
 
-  tiendu preview create      Crear un preview remoto
-  tiendu preview list        Listar previews de la tienda
-  tiendu preview delete      Eliminar el preview activo
-  tiendu preview open        Abrir la URL del preview en el navegador
+  tiendu preview create      Create a new remote preview
+  tiendu preview list        List previews for your store
+  tiendu preview delete      Delete the active preview
+  tiendu preview open        Open the preview URL in your browser
 
-  tiendu help                Mostrar esta ayuda
+  tiendu help                Show this help message
 
-Opciones:
-  --help, -h                 Mostrar esta ayuda
+Typical workflow:
+  tiendu init my-store       Set up a new project in ./my-store
+  cd my-store
+  tiendu pull                Download the current live theme
+  tiendu dev                 Edit locally — preview updates in real time
+  tiendu publish             Ship to the live storefront when ready
 `;
 
 const main = async () => {
@@ -39,7 +43,7 @@ const main = async () => {
   const command = args[0];
   const subcommand = args[1];
 
-  // Check for updates at most once per day (never blocks or throws)
+  // Check for updates at most once per day (non-blocking)
   await checkForUpdates();
 
   if (
@@ -53,7 +57,7 @@ const main = async () => {
   }
 
   if (command === "init") {
-    await init();
+    await init(args[1]); // optional directory name
     return;
   }
 
@@ -79,32 +83,28 @@ const main = async () => {
 
   if (command === "preview") {
     if (subcommand === "create") {
-      const name = args[2];
-      await previewCreate(name);
+      await previewCreate(args[2]);
       return;
     }
-
     if (subcommand === "list") {
       await previewList();
       return;
     }
-
     if (subcommand === "delete") {
       await previewDelete();
       return;
     }
-
     if (subcommand === "open") {
       await previewOpen();
       return;
     }
 
-    console.error(`Subcomando desconocido: preview ${subcommand ?? "(vacío)"}`);
+    console.error(`Unknown subcommand: preview ${subcommand ?? "(none)"}`);
     console.log(HELP.trim());
     process.exit(1);
   }
 
-  console.error(`Comando desconocido: ${command}`);
+  console.error(`Unknown command: ${command}`);
   console.log(HELP.trim());
   process.exit(1);
 };
