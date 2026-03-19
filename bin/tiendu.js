@@ -11,6 +11,7 @@ import {
   previewDelete,
   previewOpen,
 } from "../lib/preview.mjs";
+import { checkForUpdates } from "../lib/update-check.mjs";
 
 const HELP = `
 tiendu — CLI para desarrollar temas de Tiendu
@@ -37,6 +38,9 @@ const main = async () => {
   const args = process.argv.slice(2);
   const command = args[0];
   const subcommand = args[1];
+
+  // Check for updates at most once per day (never blocks or throws)
+  await checkForUpdates();
 
   if (
     !command ||
