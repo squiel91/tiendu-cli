@@ -10,7 +10,7 @@ Download your store's theme, edit files locally, preview changes live with a sha
 
 - Node.js 20 or higher
 - A Tiendu store
-- A Tiendu API key (request one at hola@tiendu.uy)
+- A Tiendu API key (request one at dev@tiendu.uy)
 
 ---
 
