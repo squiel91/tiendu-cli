@@ -36,6 +36,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@clack/prompts": "^1.1.0",
     "fflate": "^0.8.2"
   }
 }
