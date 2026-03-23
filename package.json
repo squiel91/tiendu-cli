@@ -1,6 +1,6 @@
 {
   "name": "tiendu",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "CLI para desarrollar y publicar temas en Tiendu",
   "type": "module",
   "bin": {
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.1.0",
+    "esbuild": "^0.24.0",
     "fflate": "^0.8.2"
   }
 }
