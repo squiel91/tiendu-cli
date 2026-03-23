@@ -144,6 +144,27 @@ tiendu publish
 
 ---
 
+### `tiendu check-updates`
+
+Checks npm for a newer `tiendu` version on demand.
+
+```bash
+tiendu check-updates
+```
+
+---
+
+### `tiendu --version` / `tiendu -v`
+
+Prints the current CLI version.
+
+```bash
+tiendu --version
+tiendu -v
+```
+
+---
+
 ### `tiendu preview create [name]`
 
 Creates a new remote preview.

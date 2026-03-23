@@ -13,7 +13,11 @@ import {
   previewDelete,
   previewOpen,
 } from "../lib/preview.mjs";
-import { checkForUpdates } from "../lib/update-check.mjs";
+import {
+  checkForUpdates,
+  checkForUpdatesNow,
+  getCurrentVersion,
+} from "../lib/update-check.mjs";
 
 const HELP = `
 tiendu — Tiendu theme development CLI
@@ -32,7 +36,11 @@ Usage:
   tiendu preview delete      Delete the active preview
   tiendu preview open        Open the active preview URL in your browser
 
+  tiendu check-updates       Check npm for a newer CLI version
+  tiendu version             Show the current CLI version
+
   tiendu help                Show this help message
+  tiendu --version, -v       Show the current CLI version
 
 Typical workflow:
   tiendu init my-store       Set up a new project in ./my-store
@@ -48,8 +56,14 @@ const main = async () => {
   const command = args[0];
   const subcommand = args[1];
 
-  // Check for updates at most once per day (non-blocking)
-  await checkForUpdates();
+  if (
+    command === "version" ||
+    command === "--version" ||
+    command === "-v"
+  ) {
+    console.log(getCurrentVersion());
+    process.exit(0);
+  }
 
   if (
     !command ||
@@ -60,6 +74,14 @@ const main = async () => {
     console.log(HELP.trim());
     process.exit(0);
   }
+
+  if (command === "check-updates") {
+    await checkForUpdatesNow();
+    return;
+  }
+
+  // Check for updates at most once per day (non-blocking)
+  await checkForUpdates();
 
   if (command === "init") {
     await init(args[1]); // optional directory name

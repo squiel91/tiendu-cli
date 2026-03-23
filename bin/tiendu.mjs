@@ -11,6 +11,11 @@ import {
   previewDelete,
   previewOpen,
 } from "../lib/preview.mjs";
+import {
+  checkForUpdates,
+  checkForUpdatesNow,
+  getCurrentVersion,
+} from "../lib/update-check.mjs";
 
 const HELP = `
 tiendu — CLI para desarrollar temas de Tiendu
@@ -27,16 +32,29 @@ Uso:
   tiendu preview delete      Eliminar el preview activo
   tiendu preview open        Abrir la URL del preview en el navegador
 
+  tiendu check-updates       Buscar una nueva version del CLI
+  tiendu version             Mostrar la version actual del CLI
+
   tiendu help                Mostrar esta ayuda
 
-Opciones:
+  Opciones:
   --help, -h                 Mostrar esta ayuda
+  --version, -v              Mostrar la version actual del CLI
 `;
 
 const main = async () => {
   const args = process.argv.slice(2);
   const command = args[0];
   const subcommand = args[1];
+
+  if (
+    command === "version" ||
+    command === "--version" ||
+    command === "-v"
+  ) {
+    console.log(getCurrentVersion());
+    process.exit(0);
+  }
 
   if (
     !command ||
@@ -47,6 +65,13 @@ const main = async () => {
     console.log(HELP.trim());
     process.exit(0);
   }
+
+  if (command === "check-updates") {
+    await checkForUpdatesNow();
+    return;
+  }
+
+  await checkForUpdates();
 
   if (command === "init") {
     await init();
