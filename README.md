@@ -126,11 +126,14 @@ tiendu dev
 Zips and uploads files to the active preview, replacing its content entirely.
 
 - **Buildless themes:** uploads from the current directory.
-- **Built themes:** uploads from `dist/`.
+- **Built themes:** runs `tiendu build` first, then uploads from `dist/`.
 
 ```bash
 tiendu push
+tiendu push --skip-build
 ```
+
+Use `--skip-build` to upload the existing `dist/` output without rebuilding.
 
 ---
 
@@ -138,9 +141,15 @@ tiendu push
 
 Publishes the active preview to the live storefront. Visitors will see the new theme immediately. All previews for the store are removed after publishing.
 
+- **Buildless themes:** publishes the active preview as-is.
+- **Built themes:** builds the theme, uploads the latest `dist/` output to the preview, then publishes it.
+
 ```bash
 tiendu publish
+tiendu publish --skip-build
 ```
+
+Use `--skip-build` to publish after uploading the existing `dist/` output without rebuilding.
 
 ---
 

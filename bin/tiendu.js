@@ -26,9 +26,10 @@ Usage:
   tiendu init [dir]          Set up a theme project (optionally in a new directory)
   tiendu pull                Download the live theme from your store
   tiendu build               Build a theme (requires tiendu.config.json)
-  tiendu push                Upload local files to the active preview (full replace)
+  tiendu push [--skip-build] Upload local files to the active preview (full replace)
   tiendu dev                 Start dev mode: auto-sync changes to a live preview URL
-  tiendu publish             Publish the active preview to the live storefront
+  tiendu publish [--skip-build]
+                              Publish the active preview to the live storefront
 
   tiendu preview             Show the active preview details
   tiendu preview create      Create a new remote preview
@@ -55,6 +56,7 @@ const main = async () => {
   const args = process.argv.slice(2);
   const command = args[0];
   const subcommand = args[1];
+  const skipBuild = args.includes("--skip-build");
 
   if (
     command === "version" ||
@@ -100,7 +102,7 @@ const main = async () => {
   }
 
   if (command === "push") {
-    await push();
+    await push({ skipBuild });
     return;
   }
 
@@ -110,7 +112,7 @@ const main = async () => {
   }
 
   if (command === "publish") {
-    await publish();
+    await publish({ skipBuild });
     return;
   }
 

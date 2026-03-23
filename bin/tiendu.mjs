@@ -23,9 +23,10 @@ tiendu — CLI para desarrollar temas de Tiendu
 Uso:
   tiendu init                Inicializar un tema en el directorio actual
   tiendu pull                Descargar el tema live desde Tiendu
-  tiendu push                Subir archivos locales al preview activo (ZIP)
+  tiendu push [--skip-build] Subir archivos locales al preview activo (ZIP)
   tiendu dev                 Modo desarrollo: watch + sync automático
-  tiendu publish             Publicar el preview activo al storefront live
+  tiendu publish [--skip-build]
+                              Publicar el preview activo al storefront live
 
   tiendu preview create      Crear un preview remoto
   tiendu preview list        Listar previews de la tienda
@@ -46,6 +47,7 @@ const main = async () => {
   const args = process.argv.slice(2);
   const command = args[0];
   const subcommand = args[1];
+  const skipBuild = args.includes("--skip-build");
 
   if (
     command === "version" ||
@@ -84,7 +86,7 @@ const main = async () => {
   }
 
   if (command === "push") {
-    await push();
+    await push({ skipBuild });
     return;
   }
 
@@ -94,7 +96,7 @@ const main = async () => {
   }
 
   if (command === "publish") {
-    await publish();
+    await publish({ skipBuild });
     return;
   }
 
