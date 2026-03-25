@@ -2,7 +2,7 @@
 
 Official CLI for [Tiendu](https://tiendu.uy) — develop and publish storefront themes from your local machine.
 
-Download your store's theme, edit files locally, preview changes live with a shareable URL, and publish when you're ready — all from the terminal.
+Download your store's theme, edit files locally, preview changes live with a local auto-reloading URL plus a sharable preview URL, and publish when you're ready — all from the terminal.
 
 ---
 
@@ -44,7 +44,7 @@ tiendu init
 tiendu dev
 ```
 
-`tiendu dev` creates a remote preview, builds your source files, uploads the output, and watches for changes. It prints a shareable URL like:
+`tiendu dev` creates a remote preview, builds your source files, uploads the output, and watches for changes. It prints a local live-preview URL first, plus a sharable preview URL like:
 
 ```
 http://preview-xxxxxxxxxxxx.tiendu.uy/
@@ -53,6 +53,7 @@ http://preview-xxxxxxxxxxxx.tiendu.uy/
 The preview renders with the real Tiendu engine — same output as production.
 
 When `tiendu dev` starts, it always re-syncs your current local files to the active preview before watching for changes.
+It also starts a local live-preview URL that proxies the preview and auto-reloads after successful syncs.
 
 ---
 
@@ -121,6 +122,7 @@ tiendu dev
 - Re-syncs the full local theme to the preview on startup
 - Syncs file creates, edits and deletes
 - Retries failed file sync operations up to 3 times before giving up
+- Starts a local live-preview URL on `localhost` that refreshes after successful uploads
 - Handles both text and binary files (images, fonts, etc.)
 - Press `Ctrl+C` to stop
 
