@@ -44,7 +44,7 @@ tiendu init
 tiendu dev
 ```
 
-`tiendu dev` creates a remote preview, builds your source files, uploads the output, and watches for changes. It prints a local live-preview URL first, plus a sharable preview URL like:
+`tiendu dev` creates a remote preview, builds your source files, runs an initial push from the prepared output, and then watches for changes. It prints a local live-preview URL first, plus a sharable preview URL like:
 
 ```
 http://preview-xxxxxxxxxxxx.tiendu.uy/
@@ -94,10 +94,11 @@ tiendu build
 
 The build:
 
-1. Copies theme files (`layout/`, `templates/`, `snippets/`, `assets/`) to `dist/`
-2. Discovers entry points in `src/layout/` and `src/templates/`
-3. Bundles JS/TS and CSS into `dist/assets/`
-4. Runs project PostCSS plugins for CSS entries when available (for example Tailwind v4)
+1. Copies theme files from `src/layout/`, `src/templates/`, and `src/snippets/` to `dist/`
+2. Flattens static files from `src/assets/` into `dist/assets/`
+3. Discovers entry points in `src/layout/` and `src/templates/`
+4. Bundles JS/TS and CSS into `dist/assets/`
+5. Runs project PostCSS plugins for CSS entries when available (for example Tailwind v4)
 
 Entry naming convention:
 
@@ -279,27 +280,28 @@ my-theme/
 ├── .gitignore
 ├── src/
 │   ├── layout/
+│   │   ├── theme.liquid  # copied to dist/layout/theme.liquid
 │   │   ├── theme.ts      # layout TS entry → layout-theme.bundle.js
 │   │   └── theme.css     # layout CSS entry → layout-theme.bundle.css
 │   ├── templates/
+│   │   ├── product.liquid # copied to dist/templates/product.liquid
 │   │   ├── product.ts    # template TS entry → template-product.bundle.js
 │   │   └── product.css   # template CSS entry → template-product.bundle.css
+│   ├── snippets/         # Liquid snippets copied to dist/snippets/
+│   ├── assets/           # source assets → flattened into dist/assets/
 │   ├── lib/              # shared modules (bundled into entries, not served)
 │   └── css/              # shared CSS (imported by entry CSS)
-├── layout/               # Liquid layouts
-├── templates/            # Liquid templates
-├── snippets/             # Liquid snippets
-├── assets/               # static assets (SVGs, images, fonts)
 └── dist/                 # build output (gitignored, uploaded to Tiendu)
 ```
 
 ### How it works
 
-1. Source JS/TS/CSS in `src/` is bundled by esbuild into `dist/assets/`
-2. CSS entries also run through your local PostCSS pipeline when configured
-3. Liquid files and static assets are copied from root to `dist/`
-4. `dist/` is what gets uploaded — it looks like a normal Tiendu theme
-5. Liquid templates reference bundles via `asset_url` (e.g. `{{ 'layout-theme.bundle.js' | asset_url | script_tag }}`)
+1. Source assets in `src/assets/` are flattened into `dist/assets/` (`payment-methods/visa.svg` becomes `payment-methods___visa.svg`)
+2. Source JS/TS/CSS in `src/` is bundled by esbuild into `dist/assets/`
+3. CSS entries also run through your local PostCSS pipeline when configured
+4. Liquid files are copied from `src/` to `dist/`
+5. `dist/` is what gets uploaded — it looks like a normal Tiendu theme
+6. Liquid templates reference bundles and assets via `asset_url` (e.g. `{{ 'layout-theme.bundle.js' | asset_url | script_tag }}` or `{{ 'payment-methods/visa.svg' | asset_url }}`)
 
 ### Tailwind v4
 
