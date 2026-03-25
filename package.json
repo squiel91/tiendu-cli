@@ -13,7 +13,7 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "node bin/tiendu.mjs"
+    "dev": "node bin/tiendu.js"
   },
   "engines": {
     "node": ">=20"

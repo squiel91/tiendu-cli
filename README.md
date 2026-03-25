@@ -52,6 +52,8 @@ http://preview-xxxxxxxxxxxx.tiendu.uy/
 
 The preview renders with the real Tiendu engine — same output as production.
 
+When `tiendu dev` starts, it always re-syncs your current local files to the active preview before watching for changes.
+
 ---
 
 ## Commands
@@ -93,7 +95,8 @@ The build:
 
 1. Copies theme files (`layout/`, `templates/`, `snippets/`, `assets/`) to `dist/`
 2. Discovers entry points in `src/layout/` and `src/templates/`
-3. Bundles JS/TS and CSS via esbuild into `dist/assets/`
+3. Bundles JS/TS and CSS into `dist/assets/`
+4. Runs project PostCSS plugins for CSS entries when available (for example Tailwind v4)
 
 Entry naming convention:
 
@@ -115,7 +118,9 @@ tiendu dev
 ```
 
 - Prints the preview URL on start
+- Re-syncs the full local theme to the preview on startup
 - Syncs file creates, edits and deletes
+- Retries failed file sync operations up to 3 times before giving up
 - Handles both text and binary files (images, fonts, etc.)
 - Press `Ctrl+C` to stop
 
@@ -289,9 +294,41 @@ my-theme/
 ### How it works
 
 1. Source JS/TS/CSS in `src/` is bundled by esbuild into `dist/assets/`
-2. Liquid files and static assets are copied from root to `dist/`
-3. `dist/` is what gets uploaded — it looks like a normal Tiendu theme
-4. Liquid templates reference bundles via `asset_url` (e.g. `{{ 'layout-theme.bundle.js' | asset_url | script_tag }}`)
+2. CSS entries also run through your local PostCSS pipeline when configured
+3. Liquid files and static assets are copied from root to `dist/`
+4. `dist/` is what gets uploaded — it looks like a normal Tiendu theme
+5. Liquid templates reference bundles via `asset_url` (e.g. `{{ 'layout-theme.bundle.js' | asset_url | script_tag }}`)
+
+### Tailwind v4
+
+Built themes can use Tailwind v4 in CSS entry files.
+
+Install it in your theme project:
+
+```bash
+npm install -D tailwindcss @tailwindcss/postcss postcss
+```
+
+Then import Tailwind from a CSS entry such as `src/layout/theme.css`:
+
+```css
+@import "tailwindcss";
+```
+
+You can either:
+
+- rely on Tiendu CLI's automatic Tailwind detection when `@tailwindcss/postcss` is installed, or
+- add a local `postcss.config.mjs` / `postcss.config.js` / `postcss.config.cjs` / `postcss.config.json`
+
+Example `postcss.config.mjs`:
+
+```js
+export default {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+```
 
 ### tiendu.config.json
 
