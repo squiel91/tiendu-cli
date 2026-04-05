@@ -100,6 +100,8 @@ The build:
 4. Bundles JS/TS and CSS into `dist/assets/`
 5. Runs project PostCSS plugins for CSS entries when available (for example Tailwind v4)
 
+For TypeScript source, extensionless relative imports such as `import { initHeaderCart } from '../lib/scripts/cart'` are supported and recommended.
+
 Entry naming convention:
 
 - `src/layout/theme.ts` → `dist/assets/layout-theme.bundle.js`

@@ -12,6 +12,8 @@ import {
   previewList,
   previewDelete,
   previewOpen,
+  previewAttach,
+  previewDetach,
 } from "../lib/preview.mjs";
 import {
   checkForUpdates,
@@ -24,23 +26,29 @@ tiendu — Tiendu theme development CLI
 
 Usage:
   tiendu init [dir]          Set up a theme project (optionally in a new directory)
-  tiendu pull                Download the live theme from your store
+  tiendu pull [previewKey]   Download the live theme, or a specific preview's files
   tiendu build               Build a theme (requires tiendu.config.json)
-  tiendu push [--skip-build] Upload local files to the active preview (full replace)
+  tiendu push [previewKey] [--skip-build]
+                              Upload files to the attached or specified preview
   tiendu dev                 Start dev mode: auto-sync changes to a live preview URL
-  tiendu publish [--skip-build]
-                              Publish the active preview to the live storefront
+  tiendu publish [previewKey] [--skip-build]
+                              Publish the attached or specified preview to the live storefront
 
-  tiendu preview             Show the active preview details
-  tiendu preview create      Create a new remote preview
-  tiendu preview list        List previews for your store
-  tiendu preview delete      Delete the active preview
-  tiendu preview open        Open the active preview URL in your browser
+  tiendu preview             Show the attached preview details
+  tiendu preview create [name]
+                              Create a new preview (and attach to it)
+  tiendu preview list        List all previews for your store
+  tiendu preview attach [key]
+                              Attach to an existing preview by its key
+  tiendu preview detach      Detach from the current preview (without deleting it)
+  tiendu preview delete [key]
+                              Delete a preview (defaults to the attached one)
+  tiendu preview open        Open the attached preview URL in your browser
 
   tiendu check-updates       Check npm for a newer CLI version
   tiendu version             Show the current CLI version
 
-  tiendu help                Show this help message
+  tiendu --help, -h          Show this help message
   tiendu --version, -v       Show the current CLI version
 
 Typical workflow:
@@ -52,10 +60,19 @@ Typical workflow:
   tiendu publish             Ship to the live storefront when ready
 `;
 
+/**
+ * Extract the first positional argument that is not a flag (--skip-build, etc.).
+ * @param {string[]} args - CLI args after the command name
+ * @returns {string | undefined}
+ */
+const extractPositionalArg = (args) =>
+  args.find((arg) => !arg.startsWith("--"));
+
 const main = async () => {
   const args = process.argv.slice(2);
   const command = args[0];
   const subcommand = args[1];
+  const restArgs = args.slice(1);
   const skipBuild = args.includes("--skip-build");
 
   if (
@@ -69,7 +86,6 @@ const main = async () => {
 
   if (
     !command ||
-    command === "help" ||
     command === "--help" ||
     command === "-h"
   ) {
@@ -91,7 +107,8 @@ const main = async () => {
   }
 
   if (command === "pull") {
-    await pull();
+    const previewKey = extractPositionalArg(restArgs);
+    await pull({ previewKey });
     return;
   }
 
@@ -102,7 +119,8 @@ const main = async () => {
   }
 
   if (command === "push") {
-    await push({ skipBuild });
+    const previewKey = extractPositionalArg(restArgs);
+    await push({ skipBuild, previewKey });
     return;
   }
 
@@ -112,7 +130,8 @@ const main = async () => {
   }
 
   if (command === "publish") {
-    await publish({ skipBuild });
+    const previewKey = extractPositionalArg(restArgs);
+    await publish({ skipBuild, previewKey });
     return;
   }
 
@@ -129,8 +148,16 @@ const main = async () => {
       await previewList();
       return;
     }
+    if (subcommand === "attach") {
+      await previewAttach(args[2]);
+      return;
+    }
+    if (subcommand === "detach") {
+      await previewDetach();
+      return;
+    }
     if (subcommand === "delete") {
-      await previewDelete();
+      await previewDelete(args[2]);
       return;
     }
     if (subcommand === "open") {
