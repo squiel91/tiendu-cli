@@ -15,80 +15,138 @@ import {
   previewAttach,
   previewDetach,
 } from "../lib/preview.mjs";
+import { storesList, storesSet } from "../lib/stores.mjs";
 import {
   checkForUpdates,
   checkForUpdatesNow,
   getCurrentVersion,
 } from "../lib/update-check.mjs";
+import { configureUi } from "../lib/ui.mjs";
 
 const HELP = `
 tiendu — Tiendu theme development CLI
 
 Usage:
-  tiendu init [dir]          Set up a theme project (optionally in a new directory)
-  tiendu pull [previewKey]   Download the live theme, or a specific preview's files
-  tiendu build               Build a theme (requires tiendu.config.json)
+  tiendu init [apiKey] [baseUrl] [--dir <path>]
+                               Initialize interactively, or reset config with direct credentials
+  tiendu stores list           List stores available for the configured API key
+  tiendu stores set <storeId>  Select the active store
+  tiendu pull [previewKey]     Download the live theme or a preview into dist/
+  tiendu build                 Build or stage the current theme into dist/
   tiendu push [previewKey] [--skip-build]
-                              Upload files to the attached or specified preview
-  tiendu dev                 Start dev mode: auto-sync changes to a live preview URL
+                               Upload dist/ to the attached or specified preview
+  tiendu dev                   Start dev mode: auto-sync changes to a live preview URL
   tiendu publish [previewKey] [--skip-build]
-                              Publish the attached or specified preview to the live storefront
+                               Build/sync dist/ and publish the preview live
 
-  tiendu preview             Show the attached preview details
+  tiendu preview               Show the attached preview details
   tiendu preview create [name]
-                              Create a new preview (and attach to it)
-  tiendu preview list        List all previews for your store
-  tiendu preview attach [key]
-                              Attach to an existing preview by its key
-  tiendu preview detach      Detach from the current preview (without deleting it)
-  tiendu preview delete [key]
-                              Delete a preview (defaults to the attached one)
-  tiendu preview open        Open the attached preview URL in your browser
+                               Create a new preview (and attach to it)
+  tiendu preview list          List all previews for your store
+  tiendu preview attach [key]  Attach to an existing preview by its key
+  tiendu preview detach        Detach from the current preview (without deleting it)
+  tiendu preview delete [key]  Delete a preview (defaults to the attached one)
+  tiendu preview open          Open the attached preview URL in your browser
 
-  tiendu check-updates       Check npm for a newer CLI version
-  tiendu version             Show the current CLI version
+  tiendu check-updates         Check npm for a newer CLI version
+  tiendu version               Show the current CLI version
 
-  tiendu --help, -h          Show this help message
-  tiendu --version, -v       Show the current CLI version
+Global options:
+  --non-interactive            Disable prompts, print plain text output, and skip confirmations
+  --dir <path>                 Create the project inside a new directory during init
+  --skip-build                 Reuse the existing dist/ output for push or publish
+  --help, -h                   Show this help message
+  --version, -v                Show the current CLI version
+
+Init behavior:
+  tiendu init                  Interactive setup wizard
+  tiendu init <apiKey>         Reset saved config and connect using the default base URL
+  tiendu init <apiKey> <url>   Reset saved config and connect using a custom base URL
+  The default base URL points to the Tiendu platform and rarely needs to change.
+  If exactly one store is available, it is selected automatically.
+  If multiple stores are available, run tiendu stores list and tiendu stores set <id>.
+
+Agent-friendly setup:
+  tiendu init <apiKey> [baseUrl] --non-interactive
+  tiendu stores list --non-interactive
+  tiendu stores set <id> --non-interactive
+  tiendu pull --non-interactive
+  tiendu push --non-interactive
+  tiendu publish --non-interactive
+
+Push and pull behavior:
+  build always prepares dist/ as the local deploy artifact.
+  push sends a zip of dist/ to the target preview.
+  pull resets dist/ and extracts the downloaded theme there.
+  pull does not delete src/ files.
+
+Pipeline behavior:
+  tiendu.config.json can enable optional pipeline steps.
+  pipeline.compileScripts enables JS/TS entry compilation.
+  pipeline.compileStyles enables CSS entry compilation.
+  pipeline.postcss enables PostCSS for compiled style entries.
+  With no config file, or with no enabled pipeline steps, build just stages theme files into dist/.
 
 Typical workflow:
-  tiendu init my-store       Set up a new project in ./my-store
-  cd my-store
-  tiendu pull                Download the current live theme
-  tiendu build               Build the theme (for themes with tiendu.config.json)
-  tiendu dev                 Edit locally — preview updates in real time
-  tiendu publish             Ship to the live storefront when ready
+  tiendu init                  Connect to Tiendu and save your credentials
+  tiendu stores list           See available stores
+  tiendu stores set <id>       Select the store you want to work on
+  tiendu pull                  Refresh dist/ from the current live theme
+  tiendu dev                   Edit locally — preview updates in real time
+  tiendu publish               Ship to the live storefront when ready
 `;
 
-/**
- * Extract the first positional argument that is not a flag (--skip-build, etc.).
- * @param {string[]} args - CLI args after the command name
- * @returns {string | undefined}
- */
-const extractPositionalArg = (args) =>
-  args.find((arg) => !arg.startsWith("--"));
+const parseArgv = (argv) => {
+  const flags = new Set();
+  const values = new Map();
+  const positionals = [];
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (!arg.startsWith("--")) {
+      positionals.push(arg);
+      continue;
+    }
+
+    if (arg === "--dir") {
+      const value = argv[index + 1];
+      if (!value || value.startsWith("--")) {
+        console.error("Missing value for --dir.");
+        process.exit(1);
+      }
+      values.set("dir", value);
+      index += 1;
+      continue;
+    }
+
+    flags.add(arg);
+  }
+
+  return { flags, values, positionals };
+};
 
 const main = async () => {
-  const args = process.argv.slice(2);
-  const command = args[0];
-  const subcommand = args[1];
-  const restArgs = args.slice(1);
-  const skipBuild = args.includes("--skip-build");
+  const argv = process.argv.slice(2);
+  const { flags, values, positionals } = parseArgv(argv);
+  const command = positionals[0];
+  const subcommand = positionals[1];
+  const skipBuild = flags.has("--skip-build");
+  const nonInteractive =
+    flags.has("--non-interactive") || !process.stdin.isTTY || !process.stdout.isTTY;
+
+  configureUi({ nonInteractive });
 
   if (
     command === "version" ||
-    command === "--version" ||
-    command === "-v"
+    argv.includes("--version") ||
+    argv.includes("-v")
   ) {
     console.log(getCurrentVersion());
     process.exit(0);
   }
 
-  if (
-    !command ||
-    command === "--help" ||
-    command === "-h"
-  ) {
+  if (!command || argv.includes("--help") || argv.includes("-h")) {
     console.log(HELP.trim());
     process.exit(0);
   }
@@ -98,17 +156,36 @@ const main = async () => {
     return;
   }
 
-  // Check for updates at most once per day (non-blocking)
   await checkForUpdates();
 
   if (command === "init") {
-    await init(args[1]); // optional directory name
+    const initArgs = positionals.slice(1);
+    await init({
+      dirArg: values.get("dir"),
+      apiKeyArg: initArgs[0],
+      baseUrlArg: initArgs[1],
+    });
     return;
   }
 
+  if (command === "stores") {
+    if (subcommand === "list") {
+      await storesList();
+      return;
+    }
+
+    if (subcommand === "set") {
+      await storesSet(positionals[2]);
+      return;
+    }
+
+    console.error(`Unknown subcommand: stores ${subcommand ?? "(none)"}`);
+    console.log(HELP.trim());
+    process.exit(1);
+  }
+
   if (command === "pull") {
-    const previewKey = extractPositionalArg(restArgs);
-    await pull({ previewKey });
+    await pull({ previewKey: positionals[1] });
     return;
   }
 
@@ -119,8 +196,7 @@ const main = async () => {
   }
 
   if (command === "push") {
-    const previewKey = extractPositionalArg(restArgs);
-    await push({ skipBuild, previewKey });
+    await push({ skipBuild, previewKey: positionals[1] });
     return;
   }
 
@@ -130,8 +206,7 @@ const main = async () => {
   }
 
   if (command === "publish") {
-    const previewKey = extractPositionalArg(restArgs);
-    await publish({ skipBuild, previewKey });
+    await publish({ skipBuild, previewKey: positionals[1] });
     return;
   }
 
@@ -141,7 +216,7 @@ const main = async () => {
       return;
     }
     if (subcommand === "create") {
-      await previewCreate(args[2]);
+      await previewCreate(positionals[2]);
       return;
     }
     if (subcommand === "list") {
@@ -149,7 +224,7 @@ const main = async () => {
       return;
     }
     if (subcommand === "attach") {
-      await previewAttach(args[2]);
+      await previewAttach(positionals[2]);
       return;
     }
     if (subcommand === "detach") {
@@ -157,7 +232,7 @@ const main = async () => {
       return;
     }
     if (subcommand === "delete") {
-      await previewDelete(args[2]);
+      await previewDelete(positionals[2]);
       return;
     }
     if (subcommand === "open") {
