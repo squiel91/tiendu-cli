@@ -55,6 +55,7 @@ Global options:
   --non-interactive            Disable prompts, print plain text output, and skip confirmations
   --dir <path>                 Create the project inside a new directory during init
   --skip-build                 Reuse the existing dist/ output for push or publish
+  --skip-instances             Skip template/section group JSON and settings_data.json (preserves existing instances on the preview)
   --help, -h                   Show this help message
   --version, -v                Show the current CLI version
 
@@ -132,6 +133,7 @@ const main = async () => {
   const command = positionals[0];
   const subcommand = positionals[1];
   const skipBuild = flags.has("--skip-build");
+  const skipInstances = flags.has("--skip-instances");
   const nonInteractive =
     flags.has("--non-interactive") || !process.stdin.isTTY || !process.stdout.isTTY;
 
@@ -190,23 +192,23 @@ const main = async () => {
   }
 
   if (command === "build") {
-    const result = await build();
+    const result = await build({ skipInstances });
     if (!result.ok) process.exit(1);
     return;
   }
 
   if (command === "push") {
-    await push({ skipBuild, previewKey: positionals[1] });
+    await push({ skipBuild, previewKey: positionals[1], skipInstances });
     return;
   }
 
   if (command === "dev") {
-    await dev();
+    await dev({ skipInstances });
     return;
   }
 
   if (command === "publish") {
-    await publish({ skipBuild, previewKey: positionals[1] });
+    await publish({ skipBuild, previewKey: positionals[1], skipInstances });
     return;
   }
 

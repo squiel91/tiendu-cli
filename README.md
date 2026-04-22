@@ -138,7 +138,10 @@ Builds or stages the current theme into its deployable output directory (`dist/`
 
 ```bash
 tiendu build
+tiendu build --skip-instances
 ```
+
+- Use `--skip-instances` to omit template JSON, section group JSON, and `config/settings_data.json` from `dist/`. This is useful when you want to preserve the existing page/section instances on the preview.
 
 The build:
 
@@ -167,8 +170,10 @@ The main development command.
 
 ```bash
 tiendu dev
+tiendu dev --skip-instances
 ```
 
+- Use `--skip-instances` to sync everything except template JSON, section group JSON, and `config/settings_data.json`. Existing instances on the preview are preserved.
 - Prints the preview URL on start
 - Re-syncs the full local theme to the preview on startup
 - Syncs file creates, edits and deletes
@@ -190,7 +195,10 @@ Zips and uploads `dist/` to the active preview, replacing its content entirely.
 tiendu push
 tiendu push --skip-build
 tiendu push --skip-build --non-interactive
+tiendu push --skip-instances
 ```
+
+- Use `--skip-instances` to upload everything except template JSON, section group JSON, and `config/settings_data.json`. Existing instances on the preview are preserved.
 
 ---
 
@@ -205,7 +213,10 @@ Publishes the active preview to the live storefront. Visitors will see the new t
 tiendu publish
 tiendu publish --skip-build
 tiendu publish --skip-build --non-interactive
+tiendu publish --skip-instances
 ```
+
+- Use `--skip-instances` to publish everything except template JSON, section group JSON, and `config/settings_data.json`. Existing instances on the preview are preserved.
 
 In non-interactive mode, the publish confirmation is skipped.
 
