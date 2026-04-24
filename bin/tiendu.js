@@ -21,6 +21,7 @@ import {
   checkForUpdatesNow,
   getCurrentVersion,
 } from "../lib/update-check.mjs";
+import { resolveIncludeInstances } from "../lib/config.mjs";
 import { configureUi } from "../lib/ui.mjs";
 
 const HELP = `
@@ -32,11 +33,13 @@ Usage:
   tiendu stores list           List stores available for the configured API key
   tiendu stores set <storeId>  Select the active store
   tiendu pull [previewKey]     Download the live theme or a preview into dist/
-  tiendu build                 Build or stage the current theme into dist/
-  tiendu push [previewKey] [--skip-build]
+  tiendu build [--override-state]
+                               Build or stage the current theme into dist/
+  tiendu push [previewKey] [--skip-build] [--override-state]
                                Upload dist/ to the attached or specified preview
-  tiendu dev                   Start dev mode: auto-sync changes to a live preview URL
-  tiendu publish [previewKey] [--skip-build]
+  tiendu dev [--override-state]
+                               Start dev mode: auto-sync changes to a live preview URL
+  tiendu publish [previewKey] [--skip-build] [--override-state]
                                Build/sync dist/ and publish the preview live
 
   tiendu preview               Show the attached preview details
@@ -55,7 +58,10 @@ Global options:
   --non-interactive            Disable prompts, print plain text output, and skip confirmations
   --dir <path>                 Create the project inside a new directory during init
   --skip-build                 Reuse the existing dist/ output for push or publish
-  --skip-instances             Skip template/section group JSON and settings_data.json (preserves existing instances on the preview)
+  --override-state             Sync local theme state JSON and override editor state
+  --preserve-state             Preserve editor-managed state JSON (default)
+  --include-instances          Deprecated alias for --override-state
+  --skip-instances             Deprecated alias for --preserve-state
   --help, -h                   Show this help message
   --version, -v                Show the current CLI version
 
@@ -87,6 +93,13 @@ Pipeline behavior:
   pipeline.compileStyles enables CSS entry compilation.
   pipeline.postcss enables PostCSS for compiled style entries.
   With no config file, or with no enabled pipeline steps, build just stages theme files into dist/.
+
+Theme state behavior:
+  By default, the CLI preserves editor-managed state files: templates/*.json,
+  sections/*.json, and config/settings_data.json.
+  Use --override-state when your local state JSON should overwrite preview/editor state.
+  In tiendu.config.json, set { "sync": { "state": true } } to make local
+  state JSON the project default, or false to keep the safe default explicit.
 
 Typical workflow:
   tiendu init                  Connect to Tiendu and save your credentials
@@ -133,7 +146,12 @@ const main = async () => {
   const command = positionals[0];
   const subcommand = positionals[1];
   const skipBuild = flags.has("--skip-build");
-  const skipInstances = flags.has("--skip-instances");
+  const overrideStateFlag =
+    flags.has("--override-state") || flags.has("--include-instances");
+  const preserveStateFlag =
+    flags.has("--preserve-state") ||
+    flags.has("--preserve-instances") ||
+    flags.has("--skip-instances");
   const nonInteractive =
     flags.has("--non-interactive") || !process.stdin.isTTY || !process.stdout.isTTY;
 
@@ -192,23 +210,39 @@ const main = async () => {
   }
 
   if (command === "build") {
-    const result = await build({ skipInstances });
+    const includeInstances = await resolveIncludeInstances({
+      overrideStateFlag,
+      preserveStateFlag,
+    });
+    const result = await build({ includeInstances });
     if (!result.ok) process.exit(1);
     return;
   }
 
   if (command === "push") {
-    await push({ skipBuild, previewKey: positionals[1], skipInstances });
+    const includeInstances = await resolveIncludeInstances({
+      overrideStateFlag,
+      preserveStateFlag,
+    });
+    await push({ skipBuild, previewKey: positionals[1], includeInstances });
     return;
   }
 
   if (command === "dev") {
-    await dev({ skipInstances });
+    const includeInstances = await resolveIncludeInstances({
+      overrideStateFlag,
+      preserveStateFlag,
+    });
+    await dev({ includeInstances });
     return;
   }
 
   if (command === "publish") {
-    await publish({ skipBuild, previewKey: positionals[1], skipInstances });
+    const includeInstances = await resolveIncludeInstances({
+      overrideStateFlag,
+      preserveStateFlag,
+    });
+    await publish({ skipBuild, previewKey: positionals[1], includeInstances });
     return;
   }
 

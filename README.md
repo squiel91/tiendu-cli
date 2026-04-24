@@ -69,6 +69,8 @@ The preview renders with the real Tiendu engine — same output as production.
 When `tiendu dev` starts, it always re-syncs your current local files to the active preview before watching for changes.
 It also starts a local live-preview URL that proxies the preview and auto-reloads after successful syncs.
 
+By default, the CLI preserves editor-managed theme state so local development does not overwrite changes made in the theme editor. State files are `templates/*.json`, section group files like `sections/header-group.json`, and `config/settings_data.json`. Use `--override-state` when your local state JSON files should override the editor state.
+
 ---
 
 ## Commands
@@ -138,10 +140,13 @@ Builds or stages the current theme into its deployable output directory (`dist/`
 
 ```bash
 tiendu build
-tiendu build --skip-instances
+tiendu build --override-state
 ```
 
-- Use `--skip-instances` to omit template JSON, section group JSON, and `config/settings_data.json` from `dist/`. This is useful when you want to preserve the existing page/section instances on the preview.
+- By default, `build` omits editor-managed state files from `dist/`.
+- Use `--override-state` to include template JSON, section group JSON, and `config/settings_data.json` in `dist/`.
+- `--include-instances` is still accepted as a deprecated alias for `--override-state`.
+- `--skip-instances` is still accepted as a deprecated alias for the default preserve behavior.
 
 The build:
 
@@ -170,10 +175,11 @@ The main development command.
 
 ```bash
 tiendu dev
-tiendu dev --skip-instances
+tiendu dev --override-state
 ```
 
-- Use `--skip-instances` to sync everything except template JSON, section group JSON, and `config/settings_data.json`. Existing instances on the preview are preserved.
+- By default, `dev` preserves template JSON, section group JSON, and `config/settings_data.json` on the preview so theme editor changes are not overwritten.
+- Use `--override-state` to sync those state files from your local project too.
 - Prints the preview URL on start
 - Re-syncs the full local theme to the preview on startup
 - Syncs file creates, edits and deletes
@@ -195,10 +201,11 @@ Zips and uploads `dist/` to the active preview, replacing its content entirely.
 tiendu push
 tiendu push --skip-build
 tiendu push --skip-build --non-interactive
-tiendu push --skip-instances
+tiendu push --override-state
 ```
 
-- Use `--skip-instances` to upload everything except template JSON, section group JSON, and `config/settings_data.json`. Existing instances on the preview are preserved.
+- By default, `push` uploads code/assets while preserving editor-managed state on the preview.
+- Use `--override-state` to upload local template JSON, section group JSON, and `config/settings_data.json`.
 
 ---
 
@@ -213,12 +220,27 @@ Publishes the active preview to the live storefront. Visitors will see the new t
 tiendu publish
 tiendu publish --skip-build
 tiendu publish --skip-build --non-interactive
-tiendu publish --skip-instances
+tiendu publish --override-state
 ```
 
-- Use `--skip-instances` to publish everything except template JSON, section group JSON, and `config/settings_data.json`. Existing instances on the preview are preserved.
+- By default, `publish` syncs code/assets before publishing while preserving editor-managed state.
+- Use `--override-state` to publish local template JSON, section group JSON, and `config/settings_data.json`.
 
 In non-interactive mode, the publish confirmation is skipped.
+
+### State sync defaults
+
+You can set the default for a project in `tiendu.config.json`:
+
+```json
+{
+  "sync": {
+    "state": false
+  }
+}
+```
+
+Use `true` when local state JSON files should override editor state by default.
 
 ---
 
