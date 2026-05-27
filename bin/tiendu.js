@@ -21,18 +21,19 @@ import {
   checkForUpdatesNow,
   getCurrentVersion,
 } from "../lib/update-check.mjs";
-import { resolveIncludeInstances } from "../lib/config.mjs";
+import { resolveOverrideState } from "../lib/config.mjs";
 import { configureUi } from "../lib/ui.mjs";
 
 const HELP = `
 tiendu — Tiendu theme development CLI
 
 Usage:
-  tiendu init [apiKey] [baseUrl] [--dir <path>]
+  tiendu init [apiKey] [baseUrl] [--api-key <key>] [--base-url <url>] [--preview-key <key>] [--dir <path>]
                                Initialize interactively, or reset config with direct credentials
   tiendu stores list           List stores available for the configured API key
   tiendu stores set <storeId>  Select the active store
-  tiendu pull [previewKey]     Download the live theme or a preview into dist/
+  tiendu pull [previewKey] [--live]
+                                Download the attached preview or a specific preview into dist/ and src/
   tiendu build [--override-state]
                                Build or stage the current theme into dist/
   tiendu push [previewKey] [--skip-build] [--override-state]
@@ -57,6 +58,10 @@ Usage:
 Global options:
   --non-interactive            Disable prompts, print plain text output, and skip confirmations
   --dir <path>                 Create the project inside a new directory during init
+  --api-key <key>              Provide an API key to tiendu init (alternative to positional arg)
+  --base-url <url>             Provide a base URL to tiendu init (alternative to positional arg)
+  --preview-key <key>          Attach a preview during tiendu init
+  --live                       Force tiendu pull to download the live theme
   --skip-build                 Reuse the existing dist/ output for push or publish
   --override-state             Sync local theme state JSON and override editor state
   --preserve-state             Preserve editor-managed state JSON (default)
@@ -69,12 +74,16 @@ Init behavior:
   tiendu init                  Interactive setup wizard
   tiendu init <apiKey>         Reset saved config and connect using the default base URL
   tiendu init <apiKey> <url>   Reset saved config and connect using a custom base URL
+  tiendu init --api-key <key> --base-url <url>   Using flags instead of positional args
+  tiendu init --preview-key <key>                Attach a preview directly
   The default base URL points to the Tiendu platform and rarely needs to change.
   If exactly one store is available, it is selected automatically.
-  If multiple stores are available, run tiendu stores list and tiendu stores set <id>.
+  If multiple stores are available, the interactive init will let you choose one.
+  After selecting a store, you can also create or attach a preview.
 
 Agent-friendly setup:
   tiendu init <apiKey> [baseUrl] --non-interactive
+  tiendu init --api-key <key> --base-url <url> --non-interactive
   tiendu stores list --non-interactive
   tiendu stores set <id> --non-interactive
   tiendu pull --non-interactive
@@ -84,8 +93,8 @@ Agent-friendly setup:
 Push and pull behavior:
   build always prepares dist/ as the local deploy artifact.
   push sends a zip of dist/ to the target preview.
-  pull resets dist/ and extracts the downloaded theme there.
-  pull does not delete src/ files.
+  pull downloads from the attached preview by default, or the live theme with --live.
+  pull also syncs downloaded theme directories to src/.
 
 Pipeline behavior:
   tiendu.config.json can enable optional pipeline steps.
@@ -123,13 +132,13 @@ const parseArgv = (argv) => {
       continue;
     }
 
-    if (arg === "--dir") {
+    if (arg === "--dir" || arg === "--api-key" || arg === "--base-url" || arg === "--preview-key") {
       const value = argv[index + 1];
       if (!value || value.startsWith("--")) {
-        console.error("Missing value for --dir.");
+        console.error(`Missing value for ${arg}.`);
         process.exit(1);
       }
-      values.set("dir", value);
+      values.set(arg.slice(2), value);
       index += 1;
       continue;
     }
@@ -182,8 +191,9 @@ const main = async () => {
     const initArgs = positionals.slice(1);
     await init({
       dirArg: values.get("dir"),
-      apiKeyArg: initArgs[0],
-      baseUrlArg: initArgs[1],
+      apiKeyArg: values.get("api-key") ?? initArgs[0],
+      baseUrlArg: values.get("base-url") ?? initArgs[1],
+      previewKeyArg: values.get("preview-key"),
     });
     return;
   }
@@ -205,44 +215,44 @@ const main = async () => {
   }
 
   if (command === "pull") {
-    await pull({ previewKey: positionals[1] });
+    await pull({ previewKey: positionals[1], forceLive: flags.has("--live") });
     return;
   }
 
   if (command === "build") {
-    const includeInstances = await resolveIncludeInstances({
+    const overrideState = await resolveOverrideState({
       overrideStateFlag,
       preserveStateFlag,
     });
-    const result = await build({ includeInstances });
+    const result = await build({ overrideState });
     if (!result.ok) process.exit(1);
     return;
   }
 
   if (command === "push") {
-    const includeInstances = await resolveIncludeInstances({
+    const overrideState = await resolveOverrideState({
       overrideStateFlag,
       preserveStateFlag,
     });
-    await push({ skipBuild, previewKey: positionals[1], includeInstances });
+    await push({ skipBuild, previewKey: positionals[1], overrideState });
     return;
   }
 
   if (command === "dev") {
-    const includeInstances = await resolveIncludeInstances({
+    const overrideState = await resolveOverrideState({
       overrideStateFlag,
       preserveStateFlag,
     });
-    await dev({ includeInstances });
+    await dev({ overrideState });
     return;
   }
 
   if (command === "publish") {
-    const includeInstances = await resolveIncludeInstances({
+    const overrideState = await resolveOverrideState({
       overrideStateFlag,
       preserveStateFlag,
     });
-    await publish({ skipBuild, previewKey: positionals[1], includeInstances });
+    await publish({ skipBuild, previewKey: positionals[1], overrideState });
     return;
   }
 

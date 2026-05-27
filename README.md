@@ -2,7 +2,7 @@
 
 Official CLI for [Tiendu](https://tiendu.uy) — develop and publish storefront themes from your local machine.
 
-Download your store's theme, edit files locally, preview changes live with a local auto-reloading URL plus a sharable preview URL, and publish when you're ready — all from the terminal.
+Download your store's theme, edit files locally, preview changes with a sharable preview URL, and publish when you're ready — all from the terminal.
 
 ---
 
@@ -58,7 +58,7 @@ tiendu stores set <store-id> --non-interactive
 
 When `--non-interactive` is passed, the CLI avoids prompts and prints plain text output.
 
-`tiendu dev` creates a remote preview, builds or stages your theme into `dist/`, runs an initial push from that prepared output, and then watches for changes. It prints a local live-preview URL first, plus a sharable preview URL like:
+`tiendu dev` creates or attaches a remote preview, builds or stages your theme into `dist/`, runs an initial push from that prepared output, and then watches for changes. It prints a sharable preview URL like:
 
 ```
 http://preview-xxxxxxxxxxxx.tiendu.uy/
@@ -67,7 +67,6 @@ http://preview-xxxxxxxxxxxx.tiendu.uy/
 The preview renders with the real Tiendu engine — same output as production.
 
 When `tiendu dev` starts, it always re-syncs your current local files to the active preview before watching for changes.
-It also starts a local live-preview URL that proxies the preview and auto-reloads after successful syncs.
 
 By default, the CLI preserves editor-managed theme state so local development does not overwrite changes made in the theme editor. State files are `templates/*.json`, section group files like `sections/header-group.json`, and `config/settings_data.json`. Use `--override-state` when your local state JSON files should override the editor state.
 
@@ -118,14 +117,17 @@ tiendu stores set 123 --non-interactive
 
 ### `tiendu pull`
 
-Downloads the current live theme from your store into `dist/`.
+Downloads the attached preview theme, or the live theme with `--live`, into `dist/` and syncs theme directories to `src/`.
 
 - `pull` clears `dist/` first.
 - The downloaded archive is then extracted into `dist/`.
-- Your source files, including `src/`, are left untouched.
+- Theme directories from the download are synced into `src/`, overwriting local theme files.
+- In interactive mode, the CLI asks before overwriting `src/`.
+- In non-interactive mode, `src/` is overwritten without prompting.
 
 ```bash
 tiendu pull
+tiendu pull --live
 ```
 
 ---
@@ -184,7 +186,6 @@ tiendu dev --override-state
 - Re-syncs the full local theme to the preview on startup
 - Syncs file creates, edits and deletes
 - Retries failed file sync operations up to 3 times before giving up
-- Starts a local live-preview URL on `localhost` that refreshes after successful uploads
 - Handles both text and binary files (images, fonts, etc.)
 - Press `Ctrl+C` to stop
 
