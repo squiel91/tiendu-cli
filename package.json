@@ -4,7 +4,7 @@
   "description": "CLI para desarrollar y publicar temas en Tiendu",
   "type": "module",
   "bin": {
-    "tiendu": "./bin/tiendu.js"
+    "tiendu": "bin/tiendu.js"
   },
   "files": [
     "bin",
@@ -29,7 +29,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/squiel91/tiendu-cli"
+    "url": "git+https://github.com/squiel91/tiendu-cli.git"
   },
   "homepage": "https://tiendu.uy",
   "publishConfig": {
