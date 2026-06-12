@@ -68,7 +68,7 @@ The preview renders with the real Tiendu engine — same output as production.
 
 When `tiendu dev` starts, it always re-syncs your current local files to the active preview before watching for changes.
 
-By default, the CLI preserves editor-managed theme state so local development does not overwrite changes made in the theme editor. State files are `templates/*.json`, section group files like `sections/header-group.json`, and `config/settings_data.json`. Use `--override-state` when your local state JSON files should override the editor state.
+For `dev`, `push`, `pull`, and `publish`, choose how theme state is handled with `--preserve-state` or `--override-state`. Interactive runs ask when neither flag is passed. Non-interactive runs require one of the two flags. State files are `templates/*.json`, section group files like `sections/header-group.json`, and `config/settings_data.json`.
 
 ---
 
@@ -122,12 +122,14 @@ Downloads the attached preview theme, or the live theme with `--live`, into `dis
 - `pull` clears `dist/` first.
 - The downloaded archive is then extracted into `dist/`.
 - Theme directories from the download are synced into `src/`, overwriting local theme files.
-- In interactive mode, the CLI asks before overwriting `src/`.
-- In non-interactive mode, `src/` is overwritten without prompting.
+- In interactive mode, the CLI asks before overwriting `src/` and asks whether to preserve or override state when no state flag is passed.
+- In non-interactive mode, pass either `--preserve-state` or `--override-state`; `src/` is overwritten without prompting.
 
 ```bash
 tiendu pull
 tiendu pull --live
+tiendu pull --preserve-state
+tiendu pull --override-state
 ```
 
 ---
@@ -178,9 +180,12 @@ The main development command.
 ```bash
 tiendu dev
 tiendu dev --override-state
+tiendu dev --preserve-state
 ```
 
-- By default, `dev` preserves template JSON, section group JSON, and `config/settings_data.json` on the preview so theme editor changes are not overwritten.
+- In interactive mode, `dev` asks whether to preserve or override theme state when no state flag is passed.
+- In non-interactive mode, pass either `--preserve-state` or `--override-state`.
+- Use `--preserve-state` to keep template JSON, section group JSON, and `config/settings_data.json` on the preview so theme editor changes are not overwritten.
 - Use `--override-state` to sync those state files from your local project too.
 - Prints the preview URL on start
 - Re-syncs the full local theme to the preview on startup
@@ -201,18 +206,21 @@ Zips and uploads `dist/` to the active preview, replacing its content entirely.
 ```bash
 tiendu push
 tiendu push --skip-build
-tiendu push --skip-build --non-interactive
+tiendu push --skip-build --preserve-state --non-interactive
 tiendu push --override-state
+tiendu push --preserve-state
 ```
 
-- By default, `push` uploads code/assets while preserving editor-managed state on the preview.
+- In interactive mode, `push` asks whether to preserve or override theme state when no state flag is passed.
+- In non-interactive mode, pass either `--preserve-state` or `--override-state`.
+- Use `--preserve-state` to upload code/assets while preserving editor-managed state on the preview.
 - Use `--override-state` to upload local template JSON, section group JSON, and `config/settings_data.json`.
 
 ---
 
 ### `tiendu publish`
 
-Publishes the active preview to the live storefront. Visitors will see the new theme immediately. All previews for the store are removed after publishing.
+Publishes the active preview to the live storefront. Visitors will see the new theme immediately. Existing previews are kept after publishing.
 
 - By default it runs `tiendu build`, uploads `dist/` to the preview, and then publishes it.
 - Use `--skip-build` to publish after syncing the existing `dist/` output.
@@ -220,28 +228,17 @@ Publishes the active preview to the live storefront. Visitors will see the new t
 ```bash
 tiendu publish
 tiendu publish --skip-build
-tiendu publish --skip-build --non-interactive
+tiendu publish --skip-build --preserve-state --non-interactive
 tiendu publish --override-state
+tiendu publish --preserve-state
 ```
 
-- By default, `publish` syncs code/assets before publishing while preserving editor-managed state.
+- In interactive mode, `publish` asks whether to preserve or override theme state when no state flag is passed.
+- In non-interactive mode, pass either `--preserve-state` or `--override-state`.
+- Use `--preserve-state` to sync code/assets before publishing while preserving editor-managed state.
 - Use `--override-state` to publish local template JSON, section group JSON, and `config/settings_data.json`.
 
 In non-interactive mode, the publish confirmation is skipped.
-
-### State sync defaults
-
-You can set the default for a project in `tiendu.config.json`:
-
-```json
-{
-  "sync": {
-    "state": false
-  }
-}
-```
-
-Use `true` when local state JSON files should override editor state by default.
 
 ---
 

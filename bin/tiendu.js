@@ -32,16 +32,16 @@ Usage:
                                Initialize interactively, or reset config with direct credentials
   tiendu stores list           List stores available for the configured API key
   tiendu stores set <storeId>  Select the active store
-  tiendu pull [previewKey] [--live]
+  tiendu pull [previewKey] [--live] [--override-state | --preserve-state]
                                 Download the attached preview or a specific preview into dist/ and src/
   tiendu build [--override-state]
                                Build or stage the current theme into dist/
-  tiendu push [previewKey] [--skip-build] [--override-state]
-                               Upload dist/ to the attached or specified preview
-  tiendu dev [--override-state]
-                               Start dev mode: auto-sync changes to a live preview URL
-  tiendu publish [previewKey] [--skip-build] [--override-state]
-                               Build/sync dist/ and publish the preview live
+  tiendu push [previewKey] [--skip-build] [--override-state | --preserve-state]
+                                Upload dist/ to the attached or specified preview
+  tiendu dev [--override-state | --preserve-state]
+                                Start dev mode: auto-sync changes to a live preview URL
+  tiendu publish [previewKey] [--skip-build] [--override-state | --preserve-state]
+                                Build/sync dist/ and publish the preview live
 
   tiendu preview               Show the attached preview details
   tiendu preview create [name]
@@ -64,7 +64,7 @@ Global options:
   --live                       Force tiendu pull to download the live theme
   --skip-build                 Reuse the existing dist/ output for push or publish
   --override-state             Sync local theme state JSON and override editor state
-  --preserve-state             Preserve editor-managed state JSON (default)
+  --preserve-state             Preserve editor-managed state JSON
   --include-instances          Deprecated alias for --override-state
   --skip-instances             Deprecated alias for --preserve-state
   --help, -h                   Show this help message
@@ -86,9 +86,9 @@ Agent-friendly setup:
   tiendu init --api-key <key> --base-url <url> --non-interactive
   tiendu stores list --non-interactive
   tiendu stores set <id> --non-interactive
-  tiendu pull --non-interactive
-  tiendu push --non-interactive
-  tiendu publish --non-interactive
+  tiendu pull --preserve-state --non-interactive
+  tiendu push --preserve-state --non-interactive
+  tiendu publish --preserve-state --non-interactive
 
 Push and pull behavior:
   build always prepares dist/ as the local deploy artifact.
@@ -104,11 +104,11 @@ Pipeline behavior:
   With no config file, or with no enabled pipeline steps, build just stages theme files into dist/.
 
 Theme state behavior:
-  By default, the CLI preserves editor-managed state files: templates/*.json,
-  sections/*.json, and config/settings_data.json.
-  Use --override-state when your local state JSON should overwrite preview/editor state.
-  In tiendu.config.json, set { "sync": { "state": true } } to make local
-  state JSON the project default, or false to keep the safe default explicit.
+  Theme state files are templates/*.json, sections/*.json, and config/settings_data.json.
+  Use --preserve-state to keep existing state/configuration.
+  Use --override-state when local or downloaded state JSON should overwrite it.
+  Interactive dev, push, pull, and publish ask when neither flag is passed.
+  Non-interactive dev, push, pull, and publish require one of the two flags.
 
 Typical workflow:
   tiendu init                  Connect to Tiendu and save your credentials
@@ -215,7 +215,13 @@ const main = async () => {
   }
 
   if (command === "pull") {
-    await pull({ previewKey: positionals[1], forceLive: flags.has("--live") });
+    const overrideState = await resolveOverrideState({
+      overrideStateFlag,
+      preserveStateFlag,
+      prompt: true,
+      commandName: "tiendu pull",
+    });
+    await pull({ previewKey: positionals[1], forceLive: flags.has("--live"), overrideState });
     return;
   }
 
@@ -233,6 +239,8 @@ const main = async () => {
     const overrideState = await resolveOverrideState({
       overrideStateFlag,
       preserveStateFlag,
+      prompt: true,
+      commandName: "tiendu push",
     });
     await push({ skipBuild, previewKey: positionals[1], overrideState });
     return;
@@ -242,6 +250,8 @@ const main = async () => {
     const overrideState = await resolveOverrideState({
       overrideStateFlag,
       preserveStateFlag,
+      prompt: true,
+      commandName: "tiendu dev",
     });
     await dev({ overrideState });
     return;
@@ -251,6 +261,8 @@ const main = async () => {
     const overrideState = await resolveOverrideState({
       overrideStateFlag,
       preserveStateFlag,
+      prompt: true,
+      commandName: "tiendu publish",
     });
     await publish({ skipBuild, previewKey: positionals[1], overrideState });
     return;
