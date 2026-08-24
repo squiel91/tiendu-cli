@@ -10,7 +10,7 @@ Download your store's theme, edit files locally, preview changes with a sharable
 
 - Node.js 20 or higher
 - A Tiendu store
-- A Tiendu API key (request one at dev@tiendu.uy)
+- A Tiendu API key (from **Ajustes → Desarrollo** in the merchant admin)
 
 ---
 
@@ -24,27 +24,12 @@ npm install -g tiendu
 
 ## Quick start
 
-### Simple theme
-
 ```bash
 mkdir my-theme && cd my-theme
 tiendu init
 tiendu stores list
-tiendu stores set <store-id>
+tiendu stores set <store-handle>
 tiendu pull
-tiendu dev
-```
-
-### Pipeline-enabled theme
-
-Clone the default theme template, connect to your store, and start developing:
-
-```bash
-git clone <default-theme-repo> my-theme && cd my-theme
-npm install
-tiendu init
-tiendu stores list
-tiendu stores set <store-id>
 tiendu dev
 ```
 
@@ -53,12 +38,12 @@ tiendu dev
 ```bash
 tiendu init <api-key> [base-url] --non-interactive
 tiendu stores list --non-interactive
-tiendu stores set <store-id> --non-interactive
+tiendu stores set <store-handle> --non-interactive
 ```
 
 When `--non-interactive` is passed, the CLI avoids prompts and prints plain text output.
 
-`tiendu dev` creates or attaches a remote preview, builds or stages your theme into `dist/`, runs an initial push from that prepared output, and then watches for changes. It prints a sharable preview URL like:
+`tiendu dev` creates or attaches a remote preview, uploads this folder, and then watches for changes. It prints a sharable preview URL like:
 
 ```
 http://preview-xxxxxxxxxxxx.tiendu.uy/
@@ -81,7 +66,8 @@ Initializes a theme project in the current directory.
 - With no arguments, it runs the interactive setup wizard.
 - With `apiKey` and optional `baseUrl`, it reinitializes the saved config without prompts.
 - If only one store is available, it is selected automatically.
-- If multiple stores are available, leave the store unset and use `tiendu stores list` plus `tiendu stores set <id>`.
+- If multiple stores are available, leave the store unset and use `tiendu stores list` plus `tiendu stores set <handle>`.
+- Writes a starter `tienduignore` when that file is missing.
 
 ```bash
 tiendu init
@@ -104,26 +90,25 @@ tiendu stores list --non-interactive
 
 ---
 
-### `tiendu stores set <storeId>`
+### `tiendu stores set <storeHandle>`
 
-Validates the store against the configured API key and saves it as the active store.
+Validates the store against the configured API key and saves it as the active store. Use the store handle from `tiendu stores list`, not a numeric id.
 
 ```bash
-tiendu stores set 123
-tiendu stores set 123 --non-interactive
+tiendu stores set acme
+tiendu stores set acme --non-interactive
 ```
 
 ---
 
 ### `tiendu pull`
 
-Downloads the attached preview theme, or the live theme with `--live`, into `dist/` and syncs theme directories to `src/`.
+Downloads the attached preview theme, or the live theme with `--live`, into the current folder.
 
-- `pull` clears `dist/` first.
-- The downloaded archive is then extracted into `dist/`.
-- Theme directories from the download are synced into `src/`, overwriting local theme files.
-- In interactive mode, the CLI asks before overwriting `src/` and asks whether to preserve or override state when no state flag is passed.
-- In non-interactive mode, pass either `--preserve-state` or `--override-state`; `src/` is overwritten without prompting.
+- Ignored paths (see `tienduignore`) are left untouched.
+- Other local files that are not in the download are removed so the folder matches the remote theme.
+- In interactive mode, the CLI asks before overwriting local files and asks whether to preserve or override state when no state flag is passed.
+- In non-interactive mode, pass either `--preserve-state` or `--override-state`; local files are overwritten without prompting.
 
 ```bash
 tiendu pull
@@ -134,48 +119,11 @@ tiendu pull --override-state
 
 ---
 
-### `tiendu build`
-
-Builds or stages the current theme into its deployable output directory (`dist/`).
-
-- Theme files and assets are always prepared into `dist/`.
-- Optional pipeline steps are enabled through `tiendu.config.json`.
-- With no config file, or with no enabled pipeline steps, `build` just stages the theme files into `dist/`.
-
-```bash
-tiendu build
-tiendu build --override-state
-```
-
-- By default, `build` omits editor-managed state files from `dist/`.
-- Use `--override-state` to include template JSON, section group JSON, and `config/settings_data.json` in `dist/`.
-- `--include-instances` is still accepted as a deprecated alias for `--override-state`.
-- `--skip-instances` is still accepted as a deprecated alias for the default preserve behavior.
-
-The build:
-
-1. Copies theme files from `src/layout/`, `src/templates/`, `src/sections/`, `src/blocks/`, `src/snippets/`, and `src/config/` to `dist/`
-2. Flattens static files from `src/assets/` into `dist/assets/`
-3. Optionally discovers script and style entry points in `src/layout/` and `src/templates/`
-4. Optionally compiles JS/TS and CSS into `dist/assets/`
-5. Optionally runs project PostCSS plugins for compiled CSS entries
-
-For TypeScript source, extensionless relative imports such as `import { initHeaderCart } from '../lib/scripts/cart'` are supported and recommended.
-
-Entry naming convention:
-
-- `src/layout/theme.ts` → `dist/assets/layout-theme.bundle.js`
-- `src/templates/product.ts` → `dist/assets/template-product.bundle.js`
-- `src/layout/theme.css` → `dist/assets/layout-theme.bundle.css`
-
----
-
 ### `tiendu dev`
 
 The main development command.
 
-- Runs `tiendu build` in watch mode first.
-- Watches `dist/` and syncs changes to the preview.
+- Uploads this folder to the preview, then watches for changes.
 
 ```bash
 tiendu dev
@@ -198,17 +146,12 @@ tiendu dev --preserve-state
 
 ### `tiendu push`
 
-Zips and uploads `dist/` to the active preview, replacing its content entirely.
-
-- By default it runs `tiendu build` first.
-- Use `--skip-build` to upload the existing `dist/` artifact without rebuilding.
+Zips and uploads this folder to the active preview, replacing its content entirely (except ignored files and, by default, editor-managed state).
 
 ```bash
 tiendu push
-tiendu push --skip-build
-tiendu push --skip-build --preserve-state --non-interactive
+tiendu push --preserve-state --non-interactive
 tiendu push --override-state
-tiendu push --preserve-state
 ```
 
 - In interactive mode, `push` asks whether to preserve or override theme state when no state flag is passed.
@@ -222,15 +165,12 @@ tiendu push --preserve-state
 
 Publishes the active preview to the live storefront. Visitors will see the new theme immediately. Existing previews are kept after publishing.
 
-- By default it runs `tiendu build`, uploads `dist/` to the preview, and then publishes it.
-- Use `--skip-build` to publish after syncing the existing `dist/` output.
+- Uploads this folder to the preview, then publishes it.
 
 ```bash
 tiendu publish
-tiendu publish --skip-build
-tiendu publish --skip-build --preserve-state --non-interactive
+tiendu publish --preserve-state --non-interactive
 tiendu publish --override-state
-tiendu publish --preserve-state
 ```
 
 - In interactive mode, `publish` asks whether to preserve or override theme state when no state flag is passed.
@@ -307,29 +247,13 @@ tiendu preview open
 
 ## Typical workflow
 
-### Standard
-
 ```
 tiendu init        # one time: connect to your Tiendu account
 tiendu stores list # one time: see available stores
 tiendu stores set  # one time: select the store to work on
-tiendu pull        # one time: refresh dist/ from the live theme
+tiendu pull        # one time: download the live or preview theme
 
-tiendu dev         # develop: build/stage into dist/, sync preview updates live
-
-tiendu publish     # when ready: push to the live storefront
-```
-
-### Pipeline-enabled
-
-```
-git clone <template-repo> my-theme
-cd my-theme && npm install
-tiendu init        # one time: connect to your Tiendu account
-tiendu stores list # one time: see available stores
-tiendu stores set  # one time: select the store to work on
-
-tiendu dev         # develop: builds src/, watches dist/, syncs to preview
+tiendu dev         # develop: watch this folder and sync preview updates live
 
 tiendu publish     # when ready: push to the live storefront
 ```
@@ -340,7 +264,6 @@ tiendu publish     # when ready: push to the live storefront
 
 A **theme preview** is a remote copy of your theme hosted by Tiendu. It renders with the exact same engine as your live storefront — same Liquid templates, same data, same assets — so what you see in the preview is exactly what production will look like.
 
-- One preview per user per store
 - Preview URLs are stable and shareable
 - Previews are excluded from search engines (`noindex`)
 - Analytics are disabled in preview mode so test traffic doesn't pollute your metrics
@@ -348,99 +271,29 @@ A **theme preview** is a remote copy of your theme hosted by Tiendu. It renders 
 
 ---
 
-## Pipeline-enabled themes
+## Project structure
 
-All themes are staged into `dist/` before upload.
-
-`tiendu.config.json` can optionally enable extra pipeline steps such as script compilation, style compilation, and PostCSS processing.
-
-When pipeline steps are enabled, a theme can use:
-
-- npm packages via a local `package.json`
-- TypeScript (`.ts`) for browser code
-- JS bundling (multiple modules → single versioned bundle)
-- CSS bundling (`@import` support)
-
-### Project structure
+Push, pull, and `dev` sync the current folder (except ignored paths). Put theme files at the project root so `AGENTS.md` and project skills round-trip with the theme.
 
 ```
 my-theme/
-├── tiendu.config.json    # optional pipeline flags
-├── package.json          # npm dependencies
-├── .gitignore
-├── src/
-│   ├── layout/
-│   │   ├── theme.liquid  # copied to dist/layout/theme.liquid
-│   │   ├── theme.ts      # layout TS entry → layout-theme.bundle.js
-│   │   └── theme.css     # layout CSS entry → layout-theme.bundle.css
-│   ├── templates/
-│   │   ├── product.liquid # copied to dist/templates/product.liquid
-│   │   ├── product.ts    # template TS entry → template-product.bundle.js
-│   │   └── product.css   # template CSS entry → template-product.bundle.css
-│   ├── snippets/         # Liquid snippets copied to dist/snippets/
-│   ├── assets/           # source assets → flattened into dist/assets/
-│   ├── lib/              # shared modules (bundled into entries, not served)
-│   └── css/              # shared CSS (imported by entry CSS)
-└── dist/                 # staged upload artifact (gitignored, uploaded to Tiendu)
+├── tienduignore          # extra paths to skip (gitignore syntax)
+├── AGENTS.md             # optional agent notes for this theme
+├── .cursor/skills/       # optional project skills
+├── layout/
+│   └── theme.liquid
+├── templates/
+│   └── product.liquid
+├── sections/
+├── blocks/
+├── snippets/
+├── config/
+└── assets/
 ```
 
-### How it works
+The CLI always skips `.cli/`, `.git/`, `node_modules/`, `.env`, `.env.*`, and `.DS_Store`, even if they are not listed in `tienduignore`.
 
-1. Theme files and static assets are staged into `dist/`
-2. Script entries are compiled only when `pipeline.compileScripts` is enabled
-3. Style entries are compiled only when `pipeline.compileStyles` is enabled
-4. PostCSS runs only when `pipeline.postcss` is enabled
-5. `dist/` is what gets uploaded — it looks like a normal Tiendu theme
-6. Liquid templates reference bundles and assets via `asset_url` when compiled entries are used
-
-### Tailwind v4
-
-Pipeline-enabled themes can use Tailwind v4 in CSS entry files when `pipeline.compileStyles` and `pipeline.postcss` are enabled.
-
-Install it in your theme project:
-
-```bash
-npm install -D tailwindcss @tailwindcss/postcss postcss
-```
-
-Then import Tailwind from a CSS entry such as `src/layout/theme.css`:
-
-```css
-@import "tailwindcss";
-```
-
-You can either:
-
-- rely on Tiendu CLI's automatic Tailwind detection when `@tailwindcss/postcss` is installed, or
-- add a local `postcss.config.mjs` / `postcss.config.js` / `postcss.config.cjs` / `postcss.config.json`
-
-Example `postcss.config.mjs`:
-
-```js
-export default {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
-};
-```
-
-### tiendu.config.json
-
-Config is optional. When present, you can enable pipeline steps explicitly:
-
-```json
-{
-  "pipeline": {
-    "compileScripts": true,
-    "compileStyles": true,
-    "postcss": true
-  }
-}
-```
-
-Without enabled pipeline steps, the CLI still stages the theme into `dist/`, but it skips compilation and PostCSS.
-
-With no `tiendu.config.json`, the behavior is the same as having all pipeline steps disabled.
+If you still have an older `src/` + `dist/` layout, move `src/{layout,templates,sections,blocks,snippets,config,assets}` to the project root and delete `dist/`.
 
 ---
 

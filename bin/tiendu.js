@@ -11,7 +11,6 @@ import { pull } from "../lib/pull.mjs";
 import { push } from "../lib/push.mjs";
 import { dev } from "../lib/dev.mjs";
 import { publish } from "../lib/publish.mjs";
-import { build } from "../lib/build.mjs";
 import {
   previewCreate,
   previewShow,
@@ -37,17 +36,15 @@ Usage:
   tiendu init [apiKey] [baseUrl] [--api-key <key>] [--base-url <url>] [--preview-key <key>] [--dir <path>]
                                Initialize interactively, or reset config with direct credentials
   tiendu stores list           List stores available for the configured API key
-  tiendu stores set <storeId>  Select the active store
+  tiendu stores set <handle>   Select the active store by handle
   tiendu pull [previewKey] [--live] [--override-state | --preserve-state]
-                                Download the attached preview or a specific preview into dist/ and src/
-  tiendu build [--override-state]
-                               Build or stage the current theme into dist/
-  tiendu push [previewKey] [--skip-build] [--override-state | --preserve-state]
-                                Upload dist/ to the attached or specified preview
+                                Download the attached preview or a specific preview into this folder
+  tiendu push [previewKey] [--override-state | --preserve-state]
+                                Upload this folder to the attached or specified preview
   tiendu dev [--override-state | --preserve-state]
                                 Start dev mode: auto-sync changes to a live preview URL
-  tiendu publish [previewKey] [--skip-build] [--override-state | --preserve-state]
-                                Build/sync dist/ and publish the preview live
+  tiendu publish [previewKey] [--override-state | --preserve-state]
+                                Sync this folder and publish the preview live
 
   tiendu preview               Show the attached preview details
   tiendu preview create [name]
@@ -68,7 +65,6 @@ Global options:
   --base-url <url>             Provide a base URL to tiendu init (alternative to positional arg)
   --preview-key <key>          Attach a preview during tiendu init
   --live                       Force tiendu pull to download the live theme
-  --skip-build                 Reuse the existing dist/ output for push or publish
   --override-state             Sync local theme state JSON and override editor state
   --preserve-state             Preserve editor-managed state JSON
   --include-instances          Deprecated alias for --override-state
@@ -91,23 +87,15 @@ Agent-friendly setup:
   tiendu init <apiKey> [baseUrl] --non-interactive
   tiendu init --api-key <key> --base-url <url> --non-interactive
   tiendu stores list --non-interactive
-  tiendu stores set <id> --non-interactive
+  tiendu stores set <handle> --non-interactive
   tiendu pull --preserve-state --non-interactive
   tiendu push --preserve-state --non-interactive
   tiendu publish --preserve-state --non-interactive
 
 Push and pull behavior:
-  build always prepares dist/ as the local deploy artifact.
-  push sends a zip of dist/ to the target preview.
+  push zips this folder (except tienduignore and always-skipped paths) to the target preview.
   pull downloads from the attached preview by default, or the live theme with --live.
-  pull also syncs downloaded theme directories to src/.
-
-Pipeline behavior:
-  tiendu.config.json can enable optional pipeline steps.
-  pipeline.compileScripts enables JS/TS entry compilation.
-  pipeline.compileStyles enables CSS entry compilation.
-  pipeline.postcss enables PostCSS for compiled style entries.
-  With no config file, or with no enabled pipeline steps, build just stages theme files into dist/.
+  pull replaces local files that are not ignored.
 
 Theme state behavior:
   Theme state files are templates/*.json, sections/*.json, and config/settings_data.json.
@@ -119,8 +107,8 @@ Theme state behavior:
 Typical workflow:
   tiendu init                  Connect to Tiendu and save your credentials
   tiendu stores list           See available stores
-  tiendu stores set <id>       Select the store you want to work on
-  tiendu pull                  Refresh dist/ from the current live theme
+  tiendu stores set <handle>   Select the store you want to work on
+  tiendu pull                  Download the current theme into this folder
   tiendu dev                   Edit locally — preview updates in real time
   tiendu publish               Ship to the live storefront when ready
 `;
@@ -160,7 +148,6 @@ const main = async () => {
   const { flags, values, positionals } = parseArgv(argv);
   const command = positionals[0];
   const subcommand = positionals[1];
-  const skipBuild = flags.has("--skip-build");
   const overrideStateFlag =
     flags.has("--override-state") || flags.has("--include-instances");
   const preserveStateFlag =
@@ -231,16 +218,6 @@ const main = async () => {
     return;
   }
 
-  if (command === "build") {
-    const overrideState = await resolveOverrideState({
-      overrideStateFlag,
-      preserveStateFlag,
-    });
-    const result = await build({ overrideState });
-    if (!result.ok) process.exit(1);
-    return;
-  }
-
   if (command === "push") {
     const overrideState = await resolveOverrideState({
       overrideStateFlag,
@@ -248,7 +225,7 @@ const main = async () => {
       prompt: true,
       commandName: "tiendu push",
     });
-    await push({ skipBuild, previewKey: positionals[1], overrideState });
+    await push({ previewKey: positionals[1], overrideState });
     return;
   }
 
@@ -270,7 +247,7 @@ const main = async () => {
       prompt: true,
       commandName: "tiendu publish",
     });
-    await publish({ skipBuild, previewKey: positionals[1], overrideState });
+    await publish({ previewKey: positionals[1], overrideState });
     return;
   }
 
