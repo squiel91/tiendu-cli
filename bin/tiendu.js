@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 
-import dns from "node:dns";
-
-// WSL and some networks advertise IPv6 (AAAA) for Cloudflare but cannot
-// reach it. Prefer IPv4 so `fetch` does not fail with a bare "fetch failed".
-dns.setDefaultResultOrder("ipv4first");
-
+import "../lib/net-prefs.mjs";
 import { init } from "../lib/init.mjs";
 import { pull } from "../lib/pull.mjs";
 import { push } from "../lib/push.mjs";
