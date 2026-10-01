@@ -1,15 +1,13 @@
 # Tiendu CLI
 
-The repository is public. Do not commit credentials, `.npmrc` tokens, or npm automation tokens.
+The repository is public. Do not commit credentials.
 
-## Release
+Full documentation, for people and agents: https://docs.tiendu.uy/
 
-Pushing `main` does not publish. A version tag does.
+When working with an agent, share:
 
-1. Set the same version in `package.json` and `package-lock.json`.
-2. Commit and push to `main`.
-3. Tag that commit and push the tag, for example `v0.10.2`.
+- https://docs.tiendu.uy/llms.txt
+- https://docs.tiendu.uy/ai-agent
+- https://docs.tiendu.uy/themes/getting-started
 
-GitHub Actions publishes that tag to npm with trusted publishing. There is no npm token and no local `npm publish`.
-
-Confirm with `npm view tiendu version`.
+Releases are published by [.github/workflows/publish.yml](.github/workflows/publish.yml).

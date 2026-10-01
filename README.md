@@ -4,6 +4,12 @@ Official CLI for [Tiendu](https://tiendu.uy) — develop and publish storefront 
 
 Download your store's theme, edit files locally, preview changes with a sharable preview URL, and publish when you're ready — all from the terminal.
 
+Full documentation, for people and agents: [docs.tiendu.uy](https://docs.tiendu.uy/).
+
+When working with an agent, share [llms.txt](https://docs.tiendu.uy/llms.txt), [AI agents](https://docs.tiendu.uy/ai-agent), and [Getting started with themes](https://docs.tiendu.uy/themes/getting-started).
+
+CLI releases are published by [publish.yml](https://github.com/squiel91/tiendu-cli/blob/main/.github/workflows/publish.yml).
+
 ---
 
 ## Requirements
